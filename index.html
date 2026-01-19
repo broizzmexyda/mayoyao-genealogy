@@ -178,14 +178,15 @@ Papa.parse(sheetURL, {
           }
         });
 
-        // Find roots (no known parents)
-        const roots = people.filter(p => {
-          const father = p["Father ID"];
-          const mother = p["Mother ID"];
-          const hasFather = father && father.trim() !== "" && map[father];
-          const hasMother = mother && mother.trim() !== "" && map[mother];
-          return !hasFather && !hasMother;
-        });
+       // Find roots from the map (unique)
+const roots = Object.values(map).filter(p => {
+  const father = p["Father ID"];
+  const mother = p["Mother ID"];
+  const hasFather = father && father.trim() !== "" && map[father];
+  const hasMother = mother && mother.trim() !== "" && map[mother];
+  return !hasFather && !hasMother;
+});
+
 
         // Build trees for roots
         roots.forEach(root => {
