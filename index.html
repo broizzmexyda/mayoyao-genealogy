@@ -5,42 +5,62 @@
 <title>Mayoyao Genealogy Project</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- Treant -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.min.js"></script>
-
-<!-- PapaParse -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
 <style>
 body {
   font-family: Arial, sans-serif;
-  background: #f8f9fa;
+  background: #f5f6f7;
   margin: 0;
+  color: #222;
 }
 
 header {
   background: #fff;
-  padding: 20px;
+  padding: 24px;
   text-align: center;
   border-bottom: 1px solid #ddd;
 }
 
 main {
-  max-width: 1200px;
-  margin: 40px auto;
+  max-width: 1000px;
+  margin: 30px auto;
   padding: 0 20px;
 }
 
-#chart-container {
-  overflow-x: auto;
+h1 { margin: 0; }
+h2 { margin-top: 40px; }
+h3 { margin-top: 25px; color: #444; }
+
+.barangay {
+  margin-bottom: 40px;
+}
+
+.clan {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 15px;
+}
+
+.person {
+  display: inline-block;
+  border: 1px solid #ccc;
+  background: #fafafa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 6px 0;
+}
+
+.tree {
+  margin-left: 25px;
+  border-left: 2px solid #ddd;
+  padding-left: 15px;
 }
 
 footer {
   text-align: center;
-  color: #666;
   font-size: 14px;
+  color: #666;
   margin: 40px 0;
 }
 </style>
@@ -49,87 +69,107 @@ footer {
 <body>
 
 <header>
-<h1>Mayoyao Genealogy Project</h1>
-<p>Public Digital Family Records</p>
+  <h1>Mayoyao Genealogy Project</h1>
+  <p>Public Digital Family Records (1945–Present)</p>
 </header>
 
-<main>
-<h2>Family Tree</h2>
-<div id="chart-container"></div>
-</main>
+<main id="content"></main>
 
 <footer>
-© LGU Mayoyao
+  © LGU Mayoyao • Community Genealogy Project
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 <script>
-const CSV_URL =
+const sheetURL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
 
-Papa.parse(CSV_URL, {
+Papa.parse(sheetURL, {
   download: true,
+  header: true,
   skipEmptyLines: true,
-  complete: function(result) {
+  complete: function(results) {
+    const data = results.data;
+    const content = document.getElementById("content");
 
-    const rows = result.data.slice(1); // skip header row
-    const people = {};
+    // Organize by Barangay -> Clan
+    const structure = {};
 
-    // COLUMN INDEX MAP (VERY IMPORTANT)
-    // 0 ID
-    // 1 Full Name
-    // 2 Birth Year
-    // 3 Death Year
-    // 4 Barangay
-    // 5 Clan
-    // 6 Notes
-    // 7 Father ID
-    // 8 Mother ID
+    data.forEach(row => {
+      const barangay = row.Barangay || "Unknown Barangay";
+      const clan = row.Clan || "Unknown Clan";
 
-    // 1️⃣ Create people
-    rows.forEach(r => {
-      if (!r[0] || !r[1]) return;
+      if (!structure[barangay]) structure[barangay] = {};
+      if (!structure[barangay][clan]) structure[barangay][clan] = [];
 
-      people[r[0]] = {
-        text: {
-          name: r[1],
-          desc: (r[4] || "") + " • " + (r[5] || "")
-        },
-        children: []
-      };
+      structure[barangay][clan].push(row);
     });
 
-    // 2️⃣ Link children to fathers
-    rows.forEach(r => {
-      const id = r[0];
-      const father = r[7];
-      if (father && people[father] && people[id]) {
-        people[father].children.push(people[id]);
+    // Render
+    for (const barangay in structure) {
+      const barangayDiv = document.createElement("div");
+      barangayDiv.className = "barangay";
+      barangayDiv.innerHTML = `<h2>Barangay: ${barangay}</h2>`;
+
+      for (const clan in structure[barangay]) {
+        const clanDiv = document.createElement("div");
+        clanDiv.className = "clan";
+        clanDiv.innerHTML = `<h3>Clan: ${clan}</h3>`;
+
+        const people = structure[barangay][clan];
+        const map = {};
+        const roots = [];
+
+        people.forEach(p => {
+          map[p.ID] = { ...p, children: [] };
+        });
+
+        people.forEach(p => {
+          if (p["Father ID"] && map[p["Father ID"]]) {
+            map[p["Father ID"]].children.push(map[p.ID]);
+          } else {
+            roots.push(map[p.ID]);
+          }
+        });
+
+        roots.forEach(root => {
+          clanDiv.appendChild(buildTree(root));
+        });
+
+        barangayDiv.appendChild(clanDiv);
       }
-    });
 
-    // 3️⃣ Roots (no father)
-    const roots = rows
-      .filter(r => !r[7] && people[r[0]])
-      .map(r => people[r[0]]);
-
-    // 4️⃣ LGU root
-    const tree = {
-      text: { name: "Mayoyao Genealogy" },
-      children: roots
-    };
-
-    // 5️⃣ Render
-    new Treant({
-      chart: {
-        container: "#chart-container",
-        nodeAlign: "BOTTOM",
-        connectors: { type: "step" },
-        node: { collapsable: true }
-      },
-      nodeStructure: tree
-    });
+      content.appendChild(barangayDiv);
+    }
   }
 });
+
+function buildTree(person) {
+  const container = document.createElement("div");
+
+  const box = document.createElement("div");
+  box.className = "person";
+  box.innerHTML = `
+    <strong>${person["Full Name"]}</strong><br>
+    ${person["Birth Year"] || ""}${person["Death Year"] ? " – " + person["Death Year"] : ""}
+  `;
+
+  container.appendChild(box);
+
+  if (person.children.length > 0) {
+    const tree = document.createElement("div");
+    tree.className = "tree";
+
+    person.children.forEach(child => {
+      tree.appendChild(buildTree(child));
+    });
+
+    container.appendChild(tree);
+  }
+
+  return container;
+}
 </script>
 
 </body>
