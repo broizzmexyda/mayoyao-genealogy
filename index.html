@@ -6,6 +6,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+.clan-header {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clan-header::before {
+  content: "▼";
+  font-size: 14px;
+  transition: transform 0.2s ease;
+}
+
+.clan.collapsed .clan-header::before {
+  transform: rotate(-90deg);
+}
+
+.clan-content {
+  margin-top: 10px;
+}
+
+.clan.collapsed .clan-content {
+  display: none;
+}
+
 body {
   font-family: Arial, sans-serif;
   background: #f5f6f7;
@@ -113,9 +139,23 @@ Papa.parse(sheetURL, {
       barangayDiv.innerHTML = `<h2>Barangay: ${barangay}</h2>`;
 
       for (const clan in structure[barangay]) {
-        const clanDiv = document.createElement("div");
-        clanDiv.className = "clan";
-        clanDiv.innerHTML = `<h3>Clan: ${clan}</h3>`;
+      const clanDiv = document.createElement("div");
+      clanDiv.className = "clan";
+      
+      const clanHeader = document.createElement("h3");
+      clanHeader.className = "clan-header";
+      clanHeader.textContent = `Clan: ${clan}`;
+      
+      const clanContent = document.createElement("div");
+      clanContent.className = "clan-content";
+      
+      clanHeader.onclick = () => {
+        clanDiv.classList.toggle("collapsed");
+      };
+      
+      clanDiv.appendChild(clanHeader);
+      clanDiv.appendChild(clanContent);
+
 
         const people = structure[barangay][clan];
         const map = {};
@@ -134,7 +174,7 @@ Papa.parse(sheetURL, {
         });
 
         roots.forEach(root => {
-          clanDiv.appendChild(buildTree(root));
+        clanContent.appendChild(buildTree(root));
         });
 
         barangayDiv.appendChild(clanDiv);
