@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <title>Mayoyao Genealogy Project</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Treant.js dependencies -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.min.js"></script>
 
 <style>
   #family-tree h3 {
@@ -85,7 +89,7 @@
   </p>
 
 <h2>Family Tree by Barangay & Clan</h2>
-<div id="family-tree"></div>
+<div id="chart-container" style="width: 100%; height: auto;"></div>
 
 </main>
 
@@ -96,91 +100,89 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
 
 Papa.parse(sheetURL, {
     download: true,
-    header: true, // Use first row as header
+    header: true,
     skipEmptyLines: true,
     complete: function(results) {
         const data = results.data;
-        const people = [];
 
-        // Build people array
+        // Build people map
+        const people = {};
         data.forEach(row => {
-            people.push({
-                id: row.ID,
-                name: row["Full Name"],
-                birth: row["Birth Year"],
-                death: row["Death Year"],
-                barangay: row.Barangay,
-                clan: row.Clan,
-                notes: row.Notes,
-                father: row["Father ID"] || null,
-                mother: row["Mother ID"] || null,
+            people[row.ID] = {
+                text: {
+                    name: row["Full Name"],
+                    birth: row["Birth Year"] || "",
+                    death: row["Death Year"] || "",
+                    notes: row["Notes"] || ""
+                },
+                parent: null, // will set later
                 children: []
+            };
+        });
+
+        // Assign parents
+        data.forEach(row => {
+            const p = people[row.ID];
+            const fatherID = row["Father ID"];
+            const motherID = row["Mother ID"];
+            
+            if (fatherID && people[fatherID]) p.parent = fatherID;
+            else if (motherID && people[motherID]) p.parent = motherID;
+        });
+
+        // Create Treant nodes array
+        const treantNodes = [];
+        for (let id in people) {
+            const p = people[id];
+            treantNodes.push({
+                parent: p.parent ? "#" + p.parent : null,
+                text: {
+                    name: p.text.name + (p.text.birth ? " (" + p.text.birth + ")" : ""),
+                    desc: p.text.notes
+                },
+                HTMLid: id
             });
-        });
-
-        // Link children to parents
-        const peopleById = {};
-        people.forEach(p => peopleById[p.id] = p);
-        people.forEach(p => {
-            if (p.father && peopleById[p.father]) peopleById[p.father].children.push(p);
-            if (p.mother && peopleById[p.mother]) peopleById[p.mother].children.push(p);
-        });
-
-        // Group by Barangay → Clan
-        const treeContainer = document.querySelector("#family-tree");
-        const barangays = {};
-        people.forEach(p => {
-           // Add everyone to their barangay/clan
-            if (!barangays[p.barangay]) barangays[p.barangay] = {};
-            if (!barangays[p.barangay][p.clan]) barangays[p.barangay][p.clan] = [];
-            barangays[p.barangay][p.clan].push(p);
-
-        });
-
-        // Create DOM nodes
-        function createNode(person) {
-            const div = document.createElement("div");
-            div.className = "person";
-            div.innerHTML = `<strong>${person.name}</strong><br>${person.birth || ""} - ${person.death || ""}<br>${person.notes || ""}`;
-
-            if (person.children.length) {
-                const childrenDiv = document.createElement("div");
-                childrenDiv.className = "children";
-                person.children.forEach(c => childrenDiv.appendChild(createNode(c)));
-                div.appendChild(childrenDiv);
-            }
-
-            return div;
         }
 
-        for (const barangay in barangays) {
-            const bDiv = document.createElement("div");
-            const bTitle = document.createElement("h3");
-            bTitle.textContent = barangay;
-            bDiv.appendChild(bTitle);
+        // Treant.js configuration
+        const chart_config = {
+            chart: {
+                container: "#chart-container",
+                node: { collapsable: true },
+                connectors: { type: "step" },
+                nodeAlign: "BOTTOM"
+            },
+            nodeStructure: treantNodes.find(n => !n.parent) // Treant requires a root node
+        };
 
-            for (const clan in barangays[barangay]) {
-                const cDiv = document.createElement("div");
-                const cTitle = document.createElement("h4");
-                cTitle.textContent = clan;
-                cDiv.appendChild(cTitle);
+        // Treant only takes a single root. To handle multiple roots (e.g., barangays), 
+        // we can wrap them in a dummy "Mayoyao" root node:
+        const roots = treantNodes.filter(n => !n.parent);
+        const dummyRoot = {
+            text: { name: "Mayoyao" },
+            children: roots.map(r => ({ ...r }))
+        };
+        const finalConfig = {
+            chart: {
+                container: "#chart-container",
+                node: { collapsable: true },
+                connectors: { type: "step" },
+                nodeAlign: "BOTTOM"
+            },
+            nodeStructure: dummyRoot
+        };
 
-                barangays[barangay][clan].forEach(rootPerson => {
-                    cDiv.appendChild(createNode(rootPerson));
-                });
-
-                bDiv.appendChild(cDiv);
-            }
-
-            treeContainer.appendChild(bDiv);
-        }
+        new Treant(finalConfig);
     }
 });
 </script>
+
 
 
 </body>
