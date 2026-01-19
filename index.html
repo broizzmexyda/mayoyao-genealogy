@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+/* Collapse/Expand */
 .clan-header {
   cursor: pointer;
   user-select: none;
@@ -32,6 +33,7 @@
   display: none;
 }
 
+/* Page styles */
 body {
   font-family: Arial, sans-serif;
   background: #f5f6f7;
@@ -132,77 +134,62 @@ Papa.parse(sheetURL, {
       structure[barangay][clan].push(row);
     });
 
-    // Render
+    // Render each barangay and clan
     for (const barangay in structure) {
       const barangayDiv = document.createElement("div");
       barangayDiv.className = "barangay";
       barangayDiv.innerHTML = `<h2>Barangay: ${barangay}</h2>`;
 
       for (const clan in structure[barangay]) {
-      const clanDiv = document.createElement("div");
-      clanDiv.className = "clan";
-      
-      const clanHeader = document.createElement("h3");
-      clanHeader.className = "clan-header";
-      clanHeader.textContent = `Clan: ${clan}`;
-      
-      const clanContent = document.createElement("div");
-      clanContent.className = "clan-content";
-      
-      clanHeader.onclick = () => {
-        clanDiv.classList.toggle("collapsed");
-      };
-      
-      clanDiv.appendChild(clanHeader);
-      clanDiv.appendChild(clanContent);
+        const clanDiv = document.createElement("div");
+        clanDiv.className = "clan";
 
+        const clanHeader = document.createElement("h3");
+        clanHeader.className = "clan-header";
+        clanHeader.textContent = `Clan: ${clan}`;
+
+        const clanContent = document.createElement("div");
+        clanContent.className = "clan-content";
+
+        clanHeader.onclick = () => {
+          clanDiv.classList.toggle("collapsed");
+        };
+
+        clanDiv.appendChild(clanHeader);
+        clanDiv.appendChild(clanContent);
 
         const people = structure[barangay][clan];
         const map = {};
-        const roots = [];
 
+        // Create people map with children array
         people.forEach(p => {
           map[p.ID] = { ...p, children: [] };
         });
 
-     // Link children to parents correctly
-people.forEach(p => {
-    const fatherID = p["Father ID"];
-    const motherID = p["Mother ID"];
+        // Link children to parents
+        people.forEach(p => {
+          const fatherID = p["Father ID"];
+          const motherID = p["Mother ID"];
 
-    if (fatherID && fatherID.trim() !== "" && map[fatherID]) {
-        map[fatherID].children.push(map[p.ID]);
-    } else if (motherID && motherID.trim() !== "" && map[motherID]) {
-        map[motherID].children.push(map[p.ID]);
-    }
-});
+          if (fatherID && fatherID.trim() !== "" && map[fatherID]) {
+            map[fatherID].children.push(map[p.ID]);
+          } else if (motherID && motherID.trim() !== "" && map[motherID]) {
+            map[motherID].children.push(map[p.ID]);
+          }
+        });
 
-// Detect roots
-const roots = people.filter(p => {
-    const father = p["Father ID"];
-    const mother = p["Mother ID"];
-    const hasFather = father && father.trim() !== "" && map[father];
-    const hasMother = mother && mother.trim() !== "" && map[mother];
-    return !hasFather && !hasMother;
-});
+        // Find roots (no known parents)
+        const roots = people.filter(p => {
+          const father = p["Father ID"];
+          const mother = p["Mother ID"];
+          const hasFather = father && father.trim() !== "" && map[father];
+          const hasMother = mother && mother.trim() !== "" && map[mother];
+          return !hasFather && !hasMother;
+        });
 
-
-    // Prefer father as main parent; fallback to mother if father unknown
-    if (fatherID && map[fatherID]) {
-        map[fatherID].children.push(map[p.ID]);
-    } else if (motherID && map[motherID]) {
-        map[motherID].children.push(map[p.ID]);
-    }
-});
-
-// Find roots (people with no known parents) for this clan
-const roots = people.filter(p => {
-    return !(p["Father ID"] && map[p["Father ID"]]) && !(p["Mother ID"] && map[p["Mother ID"]]);
-});
-
-
+        // Build trees for roots
         roots.forEach(root => {
-        clanContent.appendChild(buildTree(root));
+          clanContent.appendChild(buildTree(map[root.ID]));
         });
 
         barangayDiv.appendChild(clanDiv);
@@ -213,6 +200,7 @@ const roots = people.filter(p => {
   }
 });
 
+// Recursive function to build person tree
 function buildTree(person) {
   const container = document.createElement("div");
 
