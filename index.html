@@ -92,90 +92,94 @@
 <footer>
   © LGU Mayoyao • Genealogy Project
 </footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
 <script>
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
 
-fetch(sheetURL)
-  .then(res => res.text())
-  .then(csv => {
-    const rows = csv.split("\n").slice(1);
-    const people = [];
+Papa.parse(sheetURL, {
+    download: true,
+    header: true, // Use first row as header
+    skipEmptyLines: true,
+    complete: function(results) {
+        const data = results.data;
+        const people = [];
 
-    // Parse CSV
-    rows.forEach(row => {
-      if (!row.trim()) return;
-      const cols = row.split(",");
-      people.push({
-        id: cols[0],
-        name: cols[1],
-        birth: cols[2],
-        death: cols[3],
-        barangay: cols[4],
-        clan: cols[5],
-        notes: cols[6],
-        father: cols[7] || null,
-        mother: cols[8] || null,
-        children: []
-      });
-    });
-
-    // Link children to parents
-    const peopleById = {};
-    people.forEach(p => peopleById[p.id] = p);
-    people.forEach(p => {
-      if (p.father && peopleById[p.father]) peopleById[p.father].children.push(p);
-      if (p.mother && peopleById[p.mother]) peopleById[p.mother].children.push(p);
-    });
-
-    // Group by Barangay → Clan
-    const treeContainer = document.querySelector("#family-tree");
-    const barangays = {};
-
-    people.forEach(p => {
-      if (!barangays[p.barangay]) barangays[p.barangay] = {};
-      if (!barangays[p.barangay][p.clan]) barangays[p.barangay][p.clan] = [];
-      if (!p.father && !p.mother) barangays[p.barangay][p.clan].push(p);
-    });
-
-    // Create DOM nodes
-    function createNode(person) {
-      const div = document.createElement("div");
-      div.className = "person";
-      div.innerHTML = `<strong>${person.name}</strong><br>${person.birth || ""} - ${person.death || ""}<br>${person.notes || ""}`;
-
-      if (person.children.length) {
-        const childrenDiv = document.createElement("div");
-        childrenDiv.className = "children";
-        person.children.forEach(c => childrenDiv.appendChild(createNode(c)));
-        div.appendChild(childrenDiv);
-      }
-
-      return div;
-    }
-
-    for (const barangay in barangays) {
-      const bDiv = document.createElement("div");
-      const bTitle = document.createElement("h3");
-      bTitle.textContent = barangay;
-      bDiv.appendChild(bTitle);
-
-      for (const clan in barangays[barangay]) {
-        const cDiv = document.createElement("div");
-        const cTitle = document.createElement("h4");
-        cTitle.textContent = clan;
-        cDiv.appendChild(cTitle);
-
-        barangays[barangay][clan].forEach(rootPerson => {
-          cDiv.appendChild(createNode(rootPerson));
+        // Build people array
+        data.forEach(row => {
+            people.push({
+                id: row.ID,
+                name: row["Full Name"],
+                birth: row["Birth Year"],
+                death: row["Death Year"],
+                barangay: row.Barangay,
+                clan: row.Clan,
+                notes: row.Notes,
+                father: row["Father ID"] || null,
+                mother: row["Mother ID"] || null,
+                children: []
+            });
         });
 
-        bDiv.appendChild(cDiv);
-      }
+        // Link children to parents
+        const peopleById = {};
+        people.forEach(p => peopleById[p.id] = p);
+        people.forEach(p => {
+            if (p.father && peopleById[p.father]) peopleById[p.father].children.push(p);
+            if (p.mother && peopleById[p.mother]) peopleById[p.mother].children.push(p);
+        });
 
-      treeContainer.appendChild(bDiv);
+        // Group by Barangay → Clan
+        const treeContainer = document.querySelector("#family-tree");
+        const barangays = {};
+        people.forEach(p => {
+            if (!barangays[p.barangay]) barangays[p.barangay] = {};
+            if (!barangays[p.barangay][p.clan]) barangays[p.barangay][p.clan] = [];
+            if (!p.father && !p.mother) barangays[p.barangay][p.clan].push(p);
+        });
+
+        // Create DOM nodes
+        function createNode(person) {
+            const div = document.createElement("div");
+            div.className = "person";
+            div.innerHTML = `<strong>${person.name}</strong><br>${person.birth || ""} - ${person.death || ""}<br>${person.notes || ""}`;
+
+            if (person.children.length) {
+                const childrenDiv = document.createElement("div");
+                childrenDiv.className = "children";
+                person.children.forEach(c => childrenDiv.appendChild(createNode(c)));
+                div.appendChild(childrenDiv);
+            }
+
+            return div;
+        }
+
+        for (const barangay in barangays) {
+            const bDiv = document.createElement("div");
+            const bTitle = document.createElement("h3");
+            bTitle.textContent = barangay;
+            bDiv.appendChild(bTitle);
+
+            for (const clan in barangays[barangay]) {
+                const cDiv = document.createElement("div");
+                const cTitle = document.createElement("h4");
+                cTitle.textContent = clan;
+                cDiv.appendChild(cTitle);
+
+                barangays[barangay][clan].forEach(rootPerson => {
+                    cDiv.appendChild(createNode(rootPerson));
+                });
+
+                bDiv.appendChild(cDiv);
+            }
+
+            treeContainer.appendChild(bDiv);
+        }
     }
-  });
+});
 </script>
+
 
 </body>
 </html>
