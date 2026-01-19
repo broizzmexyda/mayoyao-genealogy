@@ -165,10 +165,27 @@ Papa.parse(sheetURL, {
           map[p.ID] = { ...p, children: [] };
         });
 
-      // Link children to parents correctly
+     // Link children to parents correctly
 people.forEach(p => {
     const fatherID = p["Father ID"];
     const motherID = p["Mother ID"];
+
+    if (fatherID && fatherID.trim() !== "" && map[fatherID]) {
+        map[fatherID].children.push(map[p.ID]);
+    } else if (motherID && motherID.trim() !== "" && map[motherID]) {
+        map[motherID].children.push(map[p.ID]);
+    }
+});
+
+// Detect roots
+const roots = people.filter(p => {
+    const father = p["Father ID"];
+    const mother = p["Mother ID"];
+    const hasFather = father && father.trim() !== "" && map[father];
+    const hasMother = mother && mother.trim() !== "" && map[mother];
+    return !hasFather && !hasMother;
+});
+
 
     // Prefer father as main parent; fallback to mother if father unknown
     if (fatherID && map[fatherID]) {
