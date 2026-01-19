@@ -134,9 +134,11 @@ Papa.parse(sheetURL, {
         const treeContainer = document.querySelector("#family-tree");
         const barangays = {};
         people.forEach(p => {
+           // Add everyone to their barangay/clan
             if (!barangays[p.barangay]) barangays[p.barangay] = {};
             if (!barangays[p.barangay][p.clan]) barangays[p.barangay][p.clan] = [];
-            if (!p.father && !p.mother) barangays[p.barangay][p.clan].push(p);
+            barangays[p.barangay][p.clan].push(p);
+
         });
 
         // Create DOM nodes
