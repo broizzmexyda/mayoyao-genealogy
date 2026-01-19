@@ -54,14 +54,49 @@
   </p>
 
   <h2>Family Records</h2>
-  <p>
-    Genealogy data will appear here.
-  </p>
+  <table id="genealogy-table" border="1" cellpadding="8" cellspacing="0" width="100%">
+  <thead>
+    <tr>
+      <th>Full Name</th>
+      <th>Birth Year</th>
+      <th>Death Year</th>
+      <th>Barangay</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 </main>
 
 <footer>
   © LGU Mayoyao • Genealogy Project
 </footer>
+<script>
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
+
+fetch(sheetURL)
+  .then(response => response.text())
+  .then(data => {
+    const rows = data.split("\n").slice(1);
+    const tbody = document.querySelector("#genealogy-table tbody");
+
+    rows.forEach(row => {
+      if (!row.trim()) return;
+      const cols = row.split(",");
+      const tr = document.createElement("tr");
+
+      // Columns based on your sheet:
+      // 1 = Full Name, 2 = Birth, 3 = Death, 4 = Barangay, 5 = Notes
+      [1,2,3,4,5].forEach(i => {
+        const td = document.createElement("td");
+        td.textContent = cols[i] || "";
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+  });
+</script>
 
 </body>
 </html>
