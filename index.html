@@ -1,114 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mayoyao Genealogy Project</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<title>Mayoyao Genealogy Project</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Treant.js -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.min.js"></script>
+<!-- Treant -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/treant-js/1.0/Treant.min.js"></script>
 
-  <!-- PapaParse -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<!-- PapaParse -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f8f9fa;
-      margin: 0;
-      padding: 0;
-    }
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f8f9fa;
+  margin: 0;
+}
 
-    header {
-      background: #ffffff;
-      padding: 24px;
-      text-align: center;
-      border-bottom: 1px solid #ddd;
-    }
+header {
+  background: #fff;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
 
-    main {
-      max-width: 1100px;
-      margin: 40px auto;
-      padding: 0 20px;
-    }
+main {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
 
-    #chart-container {
-      width: 100%;
-      overflow-x: auto;
-    }
+#chart-container {
+  overflow-x: auto;
+}
 
-    footer {
-      text-align: center;
-      font-size: 14px;
-      color: #666;
-      margin: 40px 0;
-    }
-  </style>
+footer {
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+  margin: 40px 0;
+}
+</style>
 </head>
 
 <body>
 
 <header>
-  <h1>Mayoyao Genealogy Project</h1>
-  <p>Public Digital Family Records (1945–Present)</p>
+<h1>Mayoyao Genealogy Project</h1>
+<p>Public Digital Family Records</p>
 </header>
 
 <main>
-  <h2>Family Tree</h2>
-  <div id="chart-container"></div>
+<h2>Family Tree</h2>
+<div id="chart-container"></div>
 </main>
 
 <footer>
-  © LGU Mayoyao • Genealogy Project
+© LGU Mayoyao
 </footer>
 
 <script>
-const SHEET_URL =
+const CSV_URL =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
 
-Papa.parse(SHEET_URL, {
+Papa.parse(CSV_URL, {
   download: true,
-  header: true,
   skipEmptyLines: true,
-  complete: function (results) {
+  complete: function(result) {
 
-    const rows = results.data;
+    const rows = result.data.slice(1); // skip header row
     const people = {};
 
-    /* 1️⃣ Create all people */
-    rows.forEach(r => {
-      if (!r.ID || !r["Full Name"]) return;
+    // COLUMN INDEX MAP (VERY IMPORTANT)
+    // 0 ID
+    // 1 Full Name
+    // 2 Birth Year
+    // 3 Death Year
+    // 4 Barangay
+    // 5 Clan
+    // 6 Notes
+    // 7 Father ID
+    // 8 Mother ID
 
-      people[r.ID] = {
+    // 1️⃣ Create people
+    rows.forEach(r => {
+      if (!r[0] || !r[1]) return;
+
+      people[r[0]] = {
         text: {
-          name: r["Full Name"],
-          desc: `${r.Barangay || ""} • ${r.Clan || ""}`
+          name: r[1],
+          desc: (r[4] || "") + " • " + (r[5] || "")
         },
         children: []
       };
     });
 
-    /* 2️⃣ Attach children to fathers */
+    // 2️⃣ Link children to fathers
     rows.forEach(r => {
-      if (r["Father ID"] && people[r["Father ID"]] && people[r.ID]) {
-        people[r["Father ID"]].children.push(people[r.ID]);
+      const id = r[0];
+      const father = r[7];
+      if (father && people[father] && people[id]) {
+        people[father].children.push(people[id]);
       }
     });
 
-    /* 3️⃣ Find roots */
+    // 3️⃣ Roots (no father)
     const roots = rows
-      .filter(r => !r["Father ID"] && people[r.ID])
-      .map(r => people[r.ID]);
+      .filter(r => !r[7] && people[r[0]])
+      .map(r => people[r[0]]);
 
-    /* 4️⃣ Wrap in LGU root */
-    const treeData = {
+    // 4️⃣ LGU root
+    const tree = {
       text: { name: "Mayoyao Genealogy" },
       children: roots
     };
 
-    /* 5️⃣ Render */
+    // 5️⃣ Render
     new Treant({
       chart: {
         container: "#chart-container",
@@ -116,7 +126,7 @@ Papa.parse(SHEET_URL, {
         connectors: { type: "step" },
         node: { collapsable: true }
       },
-      nodeStructure: treeData
+      nodeStructure: tree
     });
   }
 });
