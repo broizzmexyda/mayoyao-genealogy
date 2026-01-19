@@ -100,88 +100,61 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
+const sheetURL =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
 
 Papa.parse(sheetURL, {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-        const data = results.data;
+  download: true,
+  header: true,
+  skipEmptyLines: true,
+  complete: function(results) {
 
-        // Build people map
-        const people = {};
-        data.forEach(row => {
-            people[row.ID] = {
-                text: {
-                    name: row["Full Name"],
-                    birth: row["Birth Year"] || "",
-                    death: row["Death Year"] || "",
-                    notes: row["Notes"] || ""
-                },
-                parent: null, // will set later
-                children: []
-            };
-        });
+    const rows = results.data;
+    const map = {};
 
-        // Assign parents
-        data.forEach(row => {
-            const p = people[row.ID];
-            const fatherID = row["Father ID"];
-            const motherID = row["Mother ID"];
-            
-            if (fatherID && people[fatherID]) p.parent = fatherID;
-            else if (motherID && people[motherID]) p.parent = motherID;
-        });
+    // 1️⃣ Create all nodes
+    rows.forEach(r => {
+      map[r.ID] = {
+        text: {
+          name: r["Full Name"],
+          desc: `${r.Barangay || ""} • ${r.Clan || ""}`
+        },
+        children: []
+      };
+    });
 
-        // Create Treant nodes array
-        const treantNodes = [];
-        for (let id in people) {
-            const p = people[id];
-            treantNodes.push({
-                parent: p.parent ? "#" + p.parent : null,
-                text: {
-                    name: p.text.name + (p.text.birth ? " (" + p.text.birth + ")" : ""),
-                    desc: p.text.notes
-                },
-                HTMLid: id
-            });
-        }
+    // 2️⃣ Link children
+    rows.forEach(r => {
+      if (r["Father ID"] && map[r["Father ID"]]) {
+        map[r["Father ID"]].children.push(map[r.ID]);
+      }
+    });
 
-        // Treant.js configuration
-        const chart_config = {
-            chart: {
-                container: "#chart-container",
-                node: { collapsable: true },
-                connectors: { type: "step" },
-                nodeAlign: "BOTTOM"
-            },
-            nodeStructure: treantNodes.find(n => !n.parent) // Treant requires a root node
-        };
+    // 3️⃣ Find roots (no father)
+    const roots = rows
+      .filter(r => !r["Father ID"])
+      .map(r => map[r.ID]);
 
-        // Treant only takes a single root. To handle multiple roots (e.g., barangays), 
-        // we can wrap them in a dummy "Mayoyao" root node:
-        const roots = treantNodes.filter(n => !n.parent);
-        const dummyRoot = {
-            text: { name: "Mayoyao" },
-            children: roots.map(r => ({ ...r }))
-        };
-        const finalConfig = {
-            chart: {
-                container: "#chart-container",
-                node: { collapsable: true },
-                connectors: { type: "step" },
-                nodeAlign: "BOTTOM"
-            },
-            nodeStructure: dummyRoot
-        };
+    // 4️⃣ Dummy LGU root
+    const tree = {
+      text: { name: "Mayoyao Genealogy" },
+      children: roots
+    };
 
-        new Treant(finalConfig);
-    }
+    // 5️⃣ Render
+    new Treant({
+      chart: {
+        container: "#chart-container",
+        nodeAlign: "BOTTOM",
+        connectors: { type: "step" },
+        node: { collapsable: true }
+      },
+      nodeStructure: tree
+    });
+  }
 });
 </script>
+
 
 
 
