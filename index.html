@@ -165,13 +165,24 @@ Papa.parse(sheetURL, {
           map[p.ID] = { ...p, children: [] };
         });
 
-        people.forEach(p => {
-          if (p["Father ID"] && map[p["Father ID"]]) {
-            map[p["Father ID"]].children.push(map[p.ID]);
-          } else {
-            roots.push(map[p.ID]);
-          }
-        });
+      // Link children to parents correctly
+people.forEach(p => {
+    const fatherID = p["Father ID"];
+    const motherID = p["Mother ID"];
+
+    // Prefer father as main parent; fallback to mother if father unknown
+    if (fatherID && map[fatherID]) {
+        map[fatherID].children.push(map[p.ID]);
+    } else if (motherID && map[motherID]) {
+        map[motherID].children.push(map[p.ID]);
+    }
+});
+
+// Find roots (people with no known parents) for this clan
+const roots = people.filter(p => {
+    return !(p["Father ID"] && map[p["Father ID"]]) && !(p["Mother ID"] && map[p["Mother ID"]]);
+});
+
 
         roots.forEach(root => {
         clanContent.appendChild(buildTree(root));
