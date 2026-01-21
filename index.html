@@ -5,177 +5,186 @@
     <title>Mayoyao Genealogy Project</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root { --primary: #2c3e50; --bg: #f4f7f6; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; color: #333; }
+        :root { --primary: #2c3e50; --accent: #3498db; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: #333; }
         
-        header { background: var(--primary); color: white; padding: 2rem; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .search-container { max-width: 600px; margin: -20px auto 20px; padding: 0 20px; }
-        #searchBar { width: 100%; padding: 12px; border-radius: 25px; border: 1px solid #ddd; box-shadow: 0 4px 6px rgba(0,0,0,0.05); outline: none; }
+        /* Navigation Menu */
+        nav { background: var(--primary); display: flex; justify-content: center; padding: 0.5rem; position: sticky; top: 0; z-index: 1000; }
+        nav button { background: none; border: none; color: white; padding: 12px 20px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        nav button:hover { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        nav button.active { border-bottom: 3px solid var(--accent); color: var(--accent); }
 
-        main { max-width: 1100px; margin: 0 auto; padding: 20px; }
-        .barangay-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        /* Views */
+        .view { display: none; max-width: 1000px; margin: 30px auto; padding: 20px; animation: fadeIn 0.4s; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Dashboard Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
+        .stat-card h3 { margin: 0; color: var(--accent); font-size: 2rem; }
+
+        /* Tree Styles */
+        .barangay-folder { background: white; margin-bottom: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+        .folder-header { padding: 15px; background: #fff; cursor: pointer; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .folder-header:hover { background: #f1f1f1; }
+        .clan-container { display: none; padding: 10px 20px; background: #fafafa; border-top: 1px solid #eee; }
         
-        .clan { border-left: 4px solid var(--primary); margin: 15px 0; padding-left: 15px; }
-        .clan-header { cursor: pointer; font-size: 1.2rem; font-weight: bold; padding: 10px 0; display: flex; justify-content: space-between; }
+        .person-card { display: inline-block; background: white; border: 1px solid #d1d1d1; padding: 8px 12px; border-radius: 6px; margin: 4px 0; font-size: 0.9rem; }
+        .tree-branch { margin-left: 25px; border-left: 1px dashed #bbb; padding-left: 15px; }
         
-        .person { 
-            display: inline-block; background: #fff; border: 1px solid #e0e0e0; 
-            padding: 10px 15px; border-radius: 8px; margin: 5px 0; 
-            transition: transform 0.1s; cursor: default;
-        }
-        .person:hover { border-color: var(--primary); background: #f0f7ff; }
-        .tree { margin-left: 30px; border-left: 1px dashed #ccc; padding-left: 20px; }
-        
-        .hidden { display: none; }
-        .loading { text-align: center; padding: 50px; font-style: italic; color: #666; }
+        .show { display: block !important; }
+        .notice-box { background: #fff3cd; border: 1px solid #ffeeba; padding: 20px; border-radius: 8px; line-height: 1.6; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Mayoyao Genealogy Project</h1>
-    <p>Digital Family Records (1945–Present)</p>
-</header>
+<nav>
+    <button onclick="showView('about')">About</button>
+    <button onclick="showView('dashboard')">Dashboard</button>
+    <button onclick="showView('tree')" class="active">Family Tree</button>
+    <button onclick="showView('privacy')">Privacy Notice</button>
+</nav>
 
-<div class="search-container">
-    <input type="text" id="searchBar" placeholder="Search by name, clan, or barangay...">
+<div id="about" class="view">
+    <h1>About Mayoyao Genealogy</h1>
+    <p>This digital archive preserves the ancestral lines of the Mayoyao community from 1945 to the present. Our goal is to connect generations and safeguard our cultural heritage.</p>
 </div>
 
-<main id="content">
-    <div class="loading">Loading community records...</div>
-</main>
+<div id="dashboard" class="view">
+    <h1>Community Insights</h1>
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><h3>-</h3><p>Total Records</p></div>
+        <div class="stat-card"><h3>-</h3><p>Barangays</p></div>
+        <div class="stat-card"><h3>-</h3><p>Clans</p></div>
+    </div>
+</div>
+
+<div id="tree" class="view active">
+    <h1>Genealogy Records</h1>
+    <div id="treeContainer">Loading data...</div>
+</div>
+
+<div id="privacy" class="view">
+    <div class="notice-box">
+        <h2>Data Privacy Notice</h2>
+        <p>In accordance with the Data Privacy Act, all information contained here is for genealogical research and community connection. Publicly accessible data is limited to names and years of birth/death. If you wish to have your records updated or removed, please contact the LGU Mayoyao administrator.</p>
+    </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
+    let rawData = [];
 
-// State Management
-let rawData = [];
+    // Tab Navigation Logic
+    function showView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
 
-// 1. Fetch Data
-async function init() {
-    Papa.parse(SHEET_URL, {
+    // Data Fetching
+    Papa.parse(CSV_URL, {
         download: true,
         header: true,
         skipEmptyLines: true,
         complete: (results) => {
             rawData = results.data;
-            render(rawData);
-            setupSearch();
-        },
-        error: (err) => {
-            document.getElementById('content').innerHTML = `<p style="color:red">Error loading data: ${err}</p>`;
+            processAndRender(rawData);
         }
     });
-}
 
-// 2. Data Processing (Hierarchical Logic)
-function buildStructure(data) {
-    const structure = {};
-    
-    data.forEach(row => {
-        const b = row.Barangay || "General";
-        const c = row.Clan || "Unspecified";
-        if (!structure[b]) structure[b] = {};
-        if (!structure[b][c]) structure[b][c] = [];
-        structure[b][c].push(row);
-    });
-    return structure;
-}
+    function processAndRender(data) {
+        const container = document.getElementById("treeContainer");
+        container.innerHTML = "";
+        
+        // 1. Update Dashboard Stats
+        const barangays = [...new Set(data.map(d => d.Barangay))].filter(Boolean);
+        const clans = [...new Set(data.map(d => d.Clan))].filter(Boolean);
+        document.getElementById('statsGrid').innerHTML = `
+            <div class="stat-card"><h3>${data.length}</h3><p>Total Records</p></div>
+            <div class="stat-card"><h3>${barangays.length}</h3><p>Barangays</p></div>
+            <div class="stat-card"><h3>${clans.length}</h3><p>Clans</p></div>
+        `;
 
-// 3. Rendering Engine
-function render(data) {
-    const container = document.getElementById("content");
-    container.innerHTML = "";
-    const structure = buildStructure(data);
+        // 2. Build Global Relationship Map
+        const personMap = new Map();
+        const isChild = new Set();
+        data.forEach(p => personMap.set(p.ID, { ...p, children: [] }));
+        
+        data.forEach(p => {
+            ["Father ID", "Mother ID"].forEach(key => {
+                const parentId = p[key];
+                if (parentId && personMap.has(parentId)) {
+                    personMap.get(parentId).children.push(personMap.get(p.ID));
+                    isChild.add(p.ID);
+                }
+            });
+        });
 
-    for (const [barangay, clans] of Object.entries(structure)) {
-        const bDiv = document.createElement("section");
-        bDiv.className = "barangay-card";
-        bDiv.innerHTML = `<h2>📍 ${barangay}</h2>`;
+        // 3. Group Roots by Barangay -> Clan
+        const structure = {};
+        personMap.forEach((person, id) => {
+            if (!isChild.has(id)) {
+                const b = person.Barangay || "General";
+                const c = person.Clan || "Other";
+                if (!structure[b]) structure[b] = {};
+                if (!structure[b][c]) structure[b][c] = [];
+                structure[b][c].push(person);
+            }
+        });
 
-        for (const [clanName, members] of Object.entries(clans)) {
-            const clanDiv = document.createElement("div");
-            clanDiv.className = "clan";
+        // 4. Render Nested UI
+        for (const [bName, clanData] of Object.entries(structure)) {
+            const bDiv = document.createElement('div');
+            bDiv.className = 'barangay-folder';
+            bDiv.innerHTML = `<div class="folder-header" onclick="toggle(this)">📍 Barangay: ${bName} <span>📂</span></div>`;
             
-            const header = document.createElement("div");
-            header.className = "clan-header";
-            header.innerHTML = `<span>Clan: ${clanName}</span> <span>${members.length} members</span>`;
+            const clanContent = document.createElement('div');
+            clanContent.className = 'clan-container';
             
-            const content = document.createElement("div");
-            content.className = "clan-body";
+            for (const [cName, roots] of Object.entries(clanData)) {
+                const cDiv = document.createElement('div');
+                cDiv.style.marginBottom = "20px";
+                cDiv.innerHTML = `<div class="folder-header" onclick="toggle(this)" style="background:#eee">Clan: ${cName} <span>🌳</span></div>`;
+                
+                const familyContent = document.createElement('div');
+                familyContent.className = 'clan-container'; // Reuse container style
+                roots.forEach(r => familyContent.appendChild(renderNode(r)));
+                
+                cDiv.appendChild(familyContent);
+                clanContent.appendChild(cDiv);
+            }
             
-            // Logic: Create a Map for O(1) lookup
-            const personMap = new Map();
-            const childIds = new Set();
-            
-            members.forEach(p => personMap.set(p.ID, { ...p, children: [] }));
-            
-           // 1. Create a flat map of all people first
-const personMap = {};
-data.forEach(p => {
-    personMap[p.ID] = { ...p, children: [] };
-});
-
-// 2. Link children to EVERY parent listed
-data.forEach(p => {
-    const fID = p["Father ID"];
-    const mID = p["Mother ID"];
-    
-    // Link to Father's branch if he exists in the data
-    if (fID && personMap[fID]) {
-        personMap[fID].children.push(personMap[p.ID]);
-    }
-    
-    // Link to Mother's branch if she exists in the data
-    if (mID && personMap[mID]) {
-        personMap[mID].children.push(personMap[p.ID]);
-    }
-});
-
-            // Find Roots (those who aren't children of someone in this list)
-            const roots = Array.from(personMap.values()).filter(p => !childIds.has(p.ID));
-            roots.forEach(root => content.appendChild(createNode(root)));
-
-            header.onclick = () => content.classList.toggle("hidden");
-            clanDiv.append(header, content);
-            bDiv.appendChild(clanDiv);
+            bDiv.appendChild(clanContent);
+            container.appendChild(bDiv);
         }
-        container.appendChild(bDiv);
     }
-}
 
-function createNode(person) {
-    const div = document.createElement("div");
-    div.innerHTML = `
-        <div class="person">
-            <strong>${person["Full Name"]}</strong><br>
-            <small>${person["Birth Year"] || '?'} - ${person["Death Year"] || 'Present'}</small>
-        </div>
-    `;
-    if (person.children.length > 0) {
-        const tree = document.createElement("div");
-        tree.className = "tree";
-        person.children.forEach(c => tree.appendChild(createNode(c)));
-        div.appendChild(tree);
+    function renderNode(person) {
+        const div = document.createElement('div');
+        div.innerHTML = `
+            <div class="person-card">
+                <strong>${person["Full Name"]}</strong><br>
+                <small>${person["Birth Year"] || '?'} - ${person["Death Year"] || 'Present'}</small>
+            </div>
+        `;
+        if (person.children.length > 0) {
+            const branch = document.createElement('div');
+            branch.className = 'tree-branch';
+            person.children.forEach(c => branch.appendChild(renderNode(c)));
+            div.appendChild(branch);
+        }
+        return div;
     }
-    return div;
-}
 
-// 4. Search Functionality
-function setupSearch() {
-    document.getElementById('searchBar').addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = rawData.filter(p => 
-            p["Full Name"].toLowerCase().includes(term) || 
-            p["Clan"].toLowerCase().includes(term) ||
-            p["Barangay"].toLowerCase().includes(term)
-        );
-        render(filtered);
-    });
-}
-
-init();
+    function toggle(element) {
+        const content = element.nextElementSibling;
+        content.classList.toggle('show');
+    }
 </script>
+
 </body>
 </html>
