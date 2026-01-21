@@ -2,224 +2,238 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mayoyao Genealogy Project</title>
+    <title>Mayoyao Genealogy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { 
-            --primary: #2c3e50; 
-            --accent: #27ae60; 
-            --highlight: #f39c12;
-            --bg: #fdfdfd; 
-            --text: #333; 
-            --border: #e0e6ed; 
+            --earth: #a0522d; /* Terracotta */
+            --forest: #2d5a27; /* Deep Green */
+            --mist: #f4f7f6; 
+            --ink: #2c3e50;
+            --gold: #d4af37;
         }
-        body { font-family: 'Inter', -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--text); line-height: 1.6; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--mist); color: var(--ink); }
         
-        /* Minimalist Header with Color Accent */
-        header { padding: 40px 20px 20px; text-align: center; border-bottom: 3px solid var(--primary); background: #fff; }
-        header h1 { font-size: 1.6rem; letter-spacing: 2px; text-transform: uppercase; margin: 0; font-weight: 700; color: var(--primary); }
-        header p { font-size: 0.8rem; color: var(--accent); margin-top: 5px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
+        /* Minimalist Header with Life */
+        header { 
+            padding: 60px 20px; text-align: center; 
+            background: linear-gradient(135deg, #fff 0%, #f9fbf9 100%);
+            border-bottom: 4px solid var(--earth);
+        }
+        header h1 { font-size: 2rem; letter-spacing: 4px; text-transform: uppercase; margin: 0; color: var(--earth); }
+        header p { font-size: 0.9rem; color: var(--forest); margin-top: 10px; font-style: italic; opacity: 0.8; }
 
-        /* Navigation */
-        nav { display: flex; justify-content: center; gap: 20px; padding: 15px 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); z-index: 1000; }
-        nav button { background: none; border: none; color: #7f8c8d; cursor: pointer; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; padding: 8px 15px; }
-        nav button:hover { color: var(--primary); background: #f0f3f5; border-radius: 4px; }
-        nav button.active { color: white; background: var(--primary); border-radius: 4px; }
+        /* Floating Navigation */
+        nav { 
+            display: flex; justify-content: center; gap: 15px; padding: 20px 0; 
+            position: sticky; top: 0; background: rgba(255,255,255,0.9); 
+            backdrop-filter: blur(10px); z-index: 1000;
+        }
+        nav button { 
+            background: none; border: 1px solid transparent; color: var(--ink); 
+            padding: 8px 20px; cursor: pointer; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 600; transition: 0.3s;
+        }
+        nav button.active { background: var(--earth); color: white; border-color: var(--earth); }
+        nav button:hover:not(.active) { border-color: var(--earth); color: var(--earth); }
 
-        .view { display: none; max-width: 900px; margin: 40px auto; padding: 0 20px; animation: fadeIn 0.4s ease; }
+        .view { display: none; max-width: 900px; margin: 40px auto; padding: 0 20px; animation: slideUp 0.5s ease; }
         .view.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Search Bar */
-        .search-box { width: 100%; max-width: 400px; padding: 12px; margin: 0 auto 40px; display: block; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; text-align: center; outline: none; transition: border-color 0.3s; }
-        .search-box:focus { border-color: var(--accent); }
+        /* Enhanced Search */
+        .search-container { position: relative; max-width: 500px; margin: 0 auto 40px; }
+        .search-box { 
+            width: 100%; padding: 15px 25px; border-radius: 30px; 
+            border: 2px solid #ddd; outline: none; font-size: 1rem;
+            transition: 0.3s; box-sizing: border-box;
+        }
+        .search-box:focus { border-color: var(--forest); box-shadow: 0 5px 15px rgba(45,90,39,0.1); }
 
         /* Dashboard Cards */
-        .stats-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
-        .card { padding: 25px; background: white; border: 1px solid var(--border); border-left: 5px solid var(--accent); border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
-        .card h2 { margin: 0; font-size: 2.2rem; color: var(--primary); }
-        .card p { font-size: 0.75rem; color: #7f8c8d; text-transform: uppercase; margin-top: 5px; font-weight: 700; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .stat-card { 
+            background: white; padding: 30px; border-radius: 15px; text-align: center;
+            border-bottom: 5px solid var(--forest); box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+        .stat-card h2 { margin: 0; font-size: 2.5rem; color: var(--earth); }
 
-        /* Clan Folders */
-        .folder { background: white; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
-        .folder-header { padding: 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 1.1rem; color: var(--primary); }
-        .folder-header:hover { background: #f8fafc; }
-        .folder-content { display: none; padding: 10px 20px 30px; border-top: 1px solid var(--border); background: #fafbfc; }
-        .folder.open > .folder-content { display: block; }
+        /* Clan Design */
+        .clan-wrapper { background: white; border-radius: 15px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid #eee; }
+        .clan-trigger { padding: 25px; cursor: pointer; display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1rem; }
+        .clan-trigger:hover { background: #fafafa; }
+        .clan-body { display: none; padding: 0 25px 30px; border-top: 1px solid #f0f0f0; }
+        .clan-wrapper.open .clan-body { display: block; }
 
-        /* Tree Styles */
-        .person-node { margin: 12px 0; }
-        .person-box { display: inline-block; padding: 6px 12px; border-radius: 6px; background: white; border: 1px solid #dce4ec; transition: 0.3s; }
-        .person-box strong { color: var(--primary); font-size: 1rem; }
-        .branch { margin-left: 30px; border-left: 2px solid #e2e8f0; padding-left: 20px; margin-top: 8px; }
+        /* Family Tree Visualization */
+        .node { margin: 15px 0; }
+        .person { 
+            display: inline-flex; align-items: center; padding: 8px 15px; 
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+            transition: 0.3s; border-left: 4px solid var(--forest);
+        }
+        .person strong { color: var(--ink); }
+        .loc { font-size: 0.7rem; color: var(--earth); margin-left: 10px; font-weight: bold; background: #fff5f0; padding: 2px 6px; border-radius: 4px; }
+        .child-group { margin-left: 35px; border-left: 2px solid #f0f0f0; padding-left: 20px; }
         
-        .highlight { background: #fff9db !important; border-color: var(--highlight) !important; box-shadow: 0 0 10px rgba(243, 156, 18, 0.2); }
-        .tag { font-size: 0.65rem; background: #ebfbee; color: var(--accent); padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 700; }
+        .found { background: #fff9e6 !important; border-color: var(--gold) !important; transform: scale(1.05); }
     </style>
 </head>
 <body>
 
 <header>
     <h1>Mayoyao Genealogy</h1>
-    <p>Mayoyao • Cordillera • Philippines</p>
+    <p>Honoring the Roots of the Cordillera</p>
 </header>
 
 <nav>
-    <button onclick="switchView('about')">About</button>
-    <button onclick="switchView('dashboard')">Stats</button>
-    <button onclick="switchView('tree')" id="defaultTab">Clan Tree</button>
-    <button onclick="switchView('privacy')">Privacy</button>
+    <button onclick="tab('about')">About</button>
+    <button onclick="tab('stats')">Community</button>
+    <button onclick="tab('tree')" id="start">Family Trees</button>
+    <button onclick="tab('privacy')">Privacy</button>
 </nav>
 
 <div id="about" class="view">
-    <div class="card" style="text-align: left; border-left: 5px solid var(--primary);">
-        <h2 style="font-size: 1.5rem; margin-bottom: 15px;">Ancestral Archive</h2>
-        <p style="text-transform: none; color: #444; font-size: 1rem;">This digital repository connects the descendants of Mayoyao to their roots. By documenting family lineages from 1945 to the present, we protect our community's identity and history for future generations.</p>
+    <div class="stat-card" style="text-align: left; border-bottom-color: var(--earth);">
+        <h2 style="font-size: 1.5rem;">The Living Archive</h2>
+        <p>This project digitizes family records starting from 1945. It ensures that the bonds of our clans remain unbroken across generations and geography.</p>
     </div>
 </div>
 
-<div id="dashboard" class="view">
-    <div class="stats-container" id="statsGrid"></div>
+<div id="stats" class="view">
+    <div class="stats-grid" id="dashboardUI"></div>
 </div>
 
 <div id="tree" class="view">
-    <input type="text" class="search-box" id="searchBar" placeholder="Search by name (e.g. 'Baham')...">
-    <div id="treeOutput">Connecting to database...</div>
+    <div class="search-container">
+        <input type="text" class="search-box" id="find" placeholder="Search a family member...">
+    </div>
+    <div id="output">Initializing roots...</div>
 </div>
 
 <div id="privacy" class="view">
-    <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem;">
-        <h3 style="color: var(--primary); margin-top: 0;">Data Privacy</h3>
-        <p>This project adheres to community standards for genealogical research. Information is limited to public records of birth and lineage. For inquiries regarding data removal or updates, please contact your local LGU administrator.</p>
-    </div>
+    <p style="text-align: center; color: #666; font-size: 0.9rem;">Protected by Community Data Standards. For corrections, contact your Barangay Secretary.</p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
-    let globalData = [];
+    const URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQHFdKL2QwhK8oAgG3gntgIxT5xSFzNj4cznnPYPzbP_qeCG8Q8DvVGcLox8gceV6S1yef5tgtIdwcw/pub?output=csv";
+    let db = [];
 
-    function switchView(viewId) {
+    function tab(id) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById(viewId).classList.add('active');
-        if (event) event.target.classList.add('active');
+        document.getElementById(id).classList.add('active');
+        event.target.classList.add('active');
     }
-    document.getElementById('defaultTab').click();
+    document.getElementById('start').click();
 
-    Papa.parse(SHEET_URL, {
+    Papa.parse(URL, {
         download: true, header: true, skipEmptyLines: true,
-        complete: (results) => {
-            globalData = results.data;
-            processAndRender(globalData);
-            setupSearch();
+        complete: (res) => {
+            db = res.data;
+            build(db);
+            initSearch();
         }
     });
 
-    function processAndRender(data) {
-        const treeContainer = document.getElementById("treeOutput");
-        treeContainer.innerHTML = "";
-        const personMap = new Map();
-        const childIds = new Set();
+    function build(data) {
+        const out = document.getElementById("output");
+        out.innerHTML = "";
+        const map = new Map();
+        const childrenSet = new Set();
 
+        // 1. Map Everyone
         data.forEach(p => {
             if(p.ID) {
-                const cleanID = p.ID.trim();
-                personMap.set(cleanID, { ...p, ID: cleanID, children: [] });
+                const id = p.ID.trim();
+                map.set(id, { ...p, ID: id, children: [] });
             }
         });
 
+        // 2. Link Relationships (Fix: avoid double nesting)
         data.forEach(p => {
-            const pId = p.ID.trim();
-            ["Father ID", "Mother ID"].forEach(key => {
-                const parentId = p[key] ? p[key].trim() : null;
-                if (parentId && personMap.has(parentId)) {
-                    const parent = personMap.get(parentId);
-                    const child = personMap.get(pId);
+            const currentId = p.ID.trim();
+            const parents = [p["Father ID"], p["Mother ID"]];
+            parents.forEach(pid => {
+                if (pid && map.has(pid.trim())) {
+                    const parent = map.get(pid.trim());
+                    const child = map.get(currentId);
                     if (!parent.children.some(c => c.ID === child.ID)) {
                         parent.children.push(child);
                     }
-                    childIds.add(pId);
+                    childrenSet.add(currentId);
                 }
             });
         });
 
-        const clansStructure = {};
-        personMap.forEach((person, id) => {
-            if (!childIds.has(id)) {
-                const clanName = person.Clan || "General";
-                if (!clansStructure[clanName]) clansStructure[clanName] = [];
-                clansStructure[clanName].push(person);
+        // 3. Group Roots by Clan
+        const clans = {};
+        map.forEach((person, id) => {
+            if (!childrenSet.has(id)) {
+                const cName = person.Clan || "Unspecified";
+                if (!clans[cName]) clans[cName] = [];
+                clans[cName].push(person);
             }
         });
 
-        Object.keys(clansStructure).sort().forEach(clanName => {
-            const clanFolder = createFolder(clanName);
-            const clanContent = clanFolder.querySelector('.folder-content');
-            clansStructure[clanName].forEach(root => clanContent.appendChild(renderNode(root)));
-            treeContainer.appendChild(clanFolder);
+        // 4. Render
+        Object.keys(clans).sort().forEach(cName => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'clan-wrapper';
+            wrapper.innerHTML = `
+                <div class="clan-trigger" onclick="this.parentElement.classList.toggle('open')">
+                    <span>${cName} Clan</span> <span>+</span>
+                </div>
+                <div class="clan-body"></div>
+            `;
+            const body = wrapper.querySelector('.clan-body');
+            clans[cName].forEach(root => body.appendChild(draw(root)));
+            out.appendChild(wrapper);
         });
-        updateDashboard(data);
-    }
 
-    function createFolder(title) {
-        const div = document.createElement('div');
-        div.className = 'folder';
-        div.innerHTML = `
-            <div class="folder-header" onclick="this.parentElement.classList.toggle('open')">
-                <span>${title}</span> <span>+</span>
-            </div>
-            <div class="folder-content"></div>
+        const bc = [...new Set(data.map(d => d.Barangay))].length;
+        document.getElementById('dashboardUI').innerHTML = `
+            <div class="stat-card"><h2>${data.length}</h2><p>People</p></div>
+            <div class="stat-card" style="border-bottom-color: var(--earth);"><h2>${Object.keys(clans).length}</h2><p>Clans</p></div>
+            <div class="stat-card"><h2>${bc}</h2><p>Barangays</p></div>
         `;
-        return div;
     }
 
-    function renderNode(person) {
+    function draw(person) {
         const div = document.createElement('div');
-        div.className = "person-node";
+        div.className = "node";
         div.setAttribute('data-name', person["Full Name"].toLowerCase());
         div.innerHTML = `
-            <div class="person-box">
+            <div class="person">
                 <strong>${person["Full Name"]}</strong>
-                <span class="tag">${person.Barangay || ''}</span>
+                <span class="loc">${person.Barangay || ''}</span>
             </div>
         `;
         if (person.children.length > 0) {
-            const branch = document.createElement('div');
-            branch.className = "branch";
-            person.children.forEach(c => branch.appendChild(renderNode(c)));
-            div.appendChild(branch);
+            const group = document.createElement('div');
+            group.className = "child-group";
+            person.children.forEach(c => group.appendChild(draw(c)));
+            div.appendChild(group);
         }
         return div;
     }
 
-    function setupSearch() {
-        document.getElementById('searchBar').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            document.querySelectorAll('.person-box').forEach(box => box.classList.remove('highlight'));
-            if (term.length < 2) return;
+    function initSearch() {
+        document.getElementById('find').addEventListener('input', (e) => {
+            const s = e.target.value.toLowerCase();
+            document.querySelectorAll('.person').forEach(p => p.classList.remove('found'));
+            if (s.length < 2) return;
 
-            const matches = document.querySelectorAll(`.person-node[data-name*="${term}"]`);
-            matches.forEach(match => {
-                const box = match.querySelector('.person-box');
-                box.classList.add('highlight');
-                let parent = match.parentElement;
-                while (parent) {
-                    if (parent.classList.contains('folder')) parent.classList.add('open');
-                    parent = parent.parentElement;
+            document.querySelectorAll(`.node[data-name*="${s}"]`).forEach(match => {
+                match.querySelector('.person').classList.add('found');
+                let p = match.parentElement;
+                while (p) {
+                    if (p.classList.contains('clan-wrapper')) p.classList.add('open');
+                    p = p.parentElement;
                 }
             });
         });
-    }
-
-    function updateDashboard(data) {
-        const clanCount = [...new Set(data.map(d => d.Clan))].length;
-        const bCount = [...new Set(data.map(d => d.Barangay))].length;
-        document.getElementById('statsGrid').innerHTML = `
-            <div class="card"><h2>${data.length}</h2><p>Total People</p></div>
-            <div class="card" style="border-left-color: var(--primary);"><h2>${clanCount}</h2><p>Clans</p></div>
-            <div class="card"><h2>${bCount}</h2><p>Barangays</p></div>
-        `;
     }
 </script>
 </body>
