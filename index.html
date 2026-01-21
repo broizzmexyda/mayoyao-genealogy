@@ -111,14 +111,27 @@ function render(data) {
             
             members.forEach(p => personMap.set(p.ID, { ...p, children: [] }));
             
-            // Link parents/children
-            members.forEach(p => {
-                const parentId = p["Father ID"] || p["Mother ID"];
-                if (parentId && personMap.has(parentId)) {
-                    personMap.get(parentId).children.push(personMap.get(p.ID));
-                    childIds.add(p.ID);
-                }
-            });
+           // 1. Create a flat map of all people first
+const personMap = {};
+data.forEach(p => {
+    personMap[p.ID] = { ...p, children: [] };
+});
+
+// 2. Link children to EVERY parent listed
+data.forEach(p => {
+    const fID = p["Father ID"];
+    const mID = p["Mother ID"];
+    
+    // Link to Father's branch if he exists in the data
+    if (fID && personMap[fID]) {
+        personMap[fID].children.push(personMap[p.ID]);
+    }
+    
+    // Link to Mother's branch if she exists in the data
+    if (mID && personMap[mID]) {
+        personMap[mID].children.push(personMap[p.ID]);
+    }
+});
 
             // Find Roots (those who aren't children of someone in this list)
             const roots = Array.from(personMap.values()).filter(p => !childIds.has(p.ID));
