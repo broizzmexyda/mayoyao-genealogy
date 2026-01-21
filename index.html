@@ -26,7 +26,7 @@
         .card { background: white; padding: 30px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .card h2 { margin: 0; font-size: 2.5rem; color: var(--accent); }
 
-        /* Folders */
+        /* Folders (Now Clan-only) */
         .folder { background: white; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
         .folder-header { padding: 15px 20px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .folder-header:hover { background: #f9f9f9; }
@@ -35,10 +35,10 @@
 
         /* Tree Nodes */
         .person-node { margin: 5px 0; }
-        .person-box { display: inline-block; background: white; border: 1px solid #cbd5e0; padding: 8px 15px; border-radius: 6px; transition: all 0.2s; }
+        .person-box { display: inline-block; background: white; border: 1px solid #cbd5e0; padding: 8px 15px; border-radius: 6px; }
         .branch { margin-left: 30px; border-left: 2px dashed #cbd5e0; padding-left: 15px; margin-top: 5px; }
         
-        .highlight { background: #fff3cd !important; border-color: #f6ad55 !important; transform: scale(1.05); }
+        .highlight { background: #fff3cd !important; border-color: #f6ad55 !important; transform: scale(1.05); box-shadow: 0 0 10px rgba(246,173,85,0.5); }
         .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #edf2f7; color: #4a5568; margin-left: 8px; }
     </style>
 </head>
@@ -53,7 +53,7 @@
 
 <div id="about" class="view">
     <h1>About the Project</h1>
-    <p>Preserving the genealogical heritage of Mayoyao from 1945 to the present.</p>
+    <p>This digital archive documents the rich genealogical history of Mayoyao, tracking family lineages from 1945 to today.</p>
 </div>
 
 <div id="dashboard" class="view">
@@ -62,14 +62,14 @@
 </div>
 
 <div id="tree" class="view">
-    <input type="text" class="search-box" id="searchBar" placeholder="Search for a name...">
-    <div id="treeOutput">Loading...</div>
+    <input type="text" class="search-box" id="searchBar" placeholder="Search for a name (e.g., Hannah or Baham)...">
+    <div id="treeOutput">Loading community records...</div>
 </div>
 
 <div id="privacy" class="view">
     <div class="card" style="text-align: left;">
         <h2>Data Privacy Notice</h2>
-        <p>This data is for community connection and genealogical history. Contact the LGU for corrections.</p>
+        <p>This information is gathered for cultural and genealogical purposes. Please contact the LGU administrator for any data correction requests.</p>
     </div>
 </div>
 
@@ -102,7 +102,7 @@
         const personMap = new Map();
         const childIds = new Set();
 
-        // 1. Create Global Map (Trim IDs to handle sheet spacing)
+        // 1. Build Global Map
         data.forEach(p => {
             if(p.ID) {
                 const cleanID = p.ID.trim();
@@ -110,48 +110,38 @@
             }
         });
 
-        // 2. Link Relationships Globally
+        // 2. Link Relationships
         data.forEach(p => {
             const pId = p.ID.trim();
-            const parents = [p["Father ID"], p["Mother ID"]];
-            
-            parents.forEach(parentId => {
-                if (parentId && personMap.has(parentId.trim())) {
-                    const parent = personMap.get(parentId.trim());
+            ["Father ID", "Mother ID"].forEach(key => {
+                const parentId = p[key] ? p[key].trim() : null;
+                if (parentId && personMap.has(parentId)) {
+                    const parent = personMap.get(parentId);
                     const child = personMap.get(pId);
-                    
                     if (!parent.children.some(c => c.ID === child.ID)) {
                         parent.children.push(child);
                     }
-                    childIds.add(pId); // Mark as child so they don't start a separate tree
+                    childIds.add(pId);
                 }
             });
         });
 
-        // 3. Group Roots by Barangay/Clan
-        const structure = {};
+        // 3. Group Roots by CLAN ONLY
+        const clansStructure = {};
         personMap.forEach((person, id) => {
             if (!childIds.has(id)) {
-                const b = person.Barangay || "General";
-                const c = person.Clan || "General";
-                if (!structure[b]) structure[b] = {};
-                if (!structure[b][c]) structure[b][c] = [];
-                structure[b][c].push(person);
+                const clanName = person.Clan || "General";
+                if (!clansStructure[clanName]) clansStructure[clanName] = [];
+                clansStructure[clanName].push(person);
             }
         });
 
-        // 4. Build the HTML UI
-        for (const [bName, clans] of Object.entries(structure)) {
-            const bFolder = createFolder(`📍 Barangay: ${bName}`);
-            const bContent = bFolder.querySelector('.folder-content');
-            
-            for (const [cName, roots] of Object.entries(clans)) {
-                const cFolder = createFolder(`Clan: ${cName}`);
-                const cContent = cFolder.querySelector('.folder-content');
-                roots.forEach(root => cContent.appendChild(renderNode(root)));
-                bContent.appendChild(cFolder);
-            }
-            treeContainer.appendChild(bFolder);
+        // 4. Render UI
+        for (const [clanName, roots] of Object.entries(clansStructure)) {
+            const clanFolder = createFolder(`🌳 Clan: ${clanName}`);
+            const clanContent = clanFolder.querySelector('.folder-content');
+            roots.forEach(root => clanContent.appendChild(renderNode(root)));
+            treeContainer.appendChild(clanFolder);
         }
         updateDashboard(data);
     }
@@ -175,7 +165,7 @@
         div.innerHTML = `
             <div class="person-box">
                 <strong>${person["Full Name"]}</strong>
-                <span class="tag">${person.Barangay}</span>
+                <span class="tag">${person.Barangay || 'N/A'}</span>
             </div>
         `;
         if (person.children.length > 0) {
@@ -207,12 +197,12 @@
     }
 
     function updateDashboard(data) {
+        const clanCount = [...new Set(data.map(d => d.Clan))].length;
         const bCount = [...new Set(data.map(d => d.Barangay))].length;
-        const cCount = [...new Set(data.map(d => d.Clan))].length;
         document.getElementById('statsGrid').innerHTML = `
-            <div class="card"><h2>${data.length}</h2><p>People</p></div>
-            <div class="card"><h2>${bCount}</h2><p>Barangays</p></div>
-            <div class="card"><h2>${cCount}</h2><p>Clans</p></div>
+            <div class="card"><h2>${data.length}</h2><p>People Recorded</p></div>
+            <div class="card"><h2>${clanCount}</h2><p>Active Clans</p></div>
+            <div class="card"><h2>${bCount}</h2><p>Barangays Represented</p></div>
         `;
     }
 </script>
